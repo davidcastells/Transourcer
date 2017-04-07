@@ -28,6 +28,7 @@ import cat.uab.cephis.ast.FunctionDefinition;
 import cat.uab.cephis.ast.FunctionInvocation;
 import cat.uab.cephis.ast.PreprocessorPragma;
 import cat.uab.cephis.ast.ReturnStatement;
+import cat.uab.cephis.ast.StatementsBlock;
 import cat.uab.cephis.ast.TypeSpecifier;
 import cat.uab.cephis.ast.VariableDeclaration;
 import cat.uab.cephis.ast.VariableReference;
@@ -65,10 +66,32 @@ public class Inliner
                 AST nextAST = Hierarchy.getNextSibling(pragma); //  ast.get(++i);
                 
                 if (nextAST instanceof FunctionInvocation)
+                {
                     inlineFunction((FunctionInvocation) nextAST);
+                    // Now inline all the function invocations in the inlined block
+                    nextAST = pragma;
+                    do
+                    {
+                        nextAST = Hierarchy.getNextSibling(nextAST);
+                    } while (!(nextAST instanceof StatementsBlock));
+                    
+                    inlineFunctionsCalledIn(nextAST);
+                }
                 else
                     inlineFunctionsCalledIn(nextAST);
             }
+            else if (pragma.value.equals("forceinline"))  
+            {
+                AST nextAST = Hierarchy.getNextSibling(pragma); //  ast.get(++i);
+                if (nextAST instanceof FunctionInvocation)
+                {
+                    inlineFunction((FunctionInvocation) nextAST);
+                }
+                else throw new RuntimeException();
+            }
+            else
+                throw new RuntimeException();
+            
         }
         
         return ast;
