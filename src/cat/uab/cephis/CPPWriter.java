@@ -35,6 +35,7 @@ import cat.uab.cephis.ast.FunctionInvocation;
 import cat.uab.cephis.ast.IfStatement;
 import cat.uab.cephis.ast.LiteralNumber;
 import cat.uab.cephis.ast.LogicalExpression;
+import cat.uab.cephis.ast.PreprocessorGlobalInclude;
 import cat.uab.cephis.ast.PreprocessorLocalInclude;
 import cat.uab.cephis.ast.PreprocessorPragma;
 import cat.uab.cephis.ast.ReturnStatement;
@@ -79,6 +80,11 @@ class CPPWriter
         if (ast instanceof PreprocessorLocalInclude)
         {
             dumpPreprocessorLocalInclude((PreprocessorLocalInclude)ast);
+            return;
+        }
+        if (ast instanceof PreprocessorGlobalInclude)
+        {
+            dumpPreprocessorGlobalInclude((PreprocessorGlobalInclude)ast);
             return;
         }
         if (ast instanceof FunctionDefinition)
@@ -226,6 +232,11 @@ class CPPWriter
     }
 
     private void dumpPreprocessorLocalInclude(PreprocessorLocalInclude ast)
+    {
+        System.out.println("#include \"" + ast.path + "\";");
+    }
+    
+    private void dumpPreprocessorGlobalInclude(PreprocessorGlobalInclude ast)
     {
         System.out.println("#include \"" + ast.path + "\";");
     }
