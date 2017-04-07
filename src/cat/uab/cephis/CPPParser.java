@@ -41,6 +41,7 @@ import cat.uab.cephis.ast.FunctionInvocation;
 import cat.uab.cephis.ast.IfStatement;
 import cat.uab.cephis.ast.LiteralNumber;
 import cat.uab.cephis.ast.LogicalExpression;
+import cat.uab.cephis.ast.PreprocessorGlobalInclude;
 import cat.uab.cephis.ast.PreprocessorLocalInclude;
 import cat.uab.cephis.ast.PreprocessorPragma;
 import cat.uab.cephis.ast.ReturnStatement;
@@ -225,13 +226,26 @@ class CPPParser
         
         int token = st.nextToken();
         
-        if (token == 34)
+        if (token == '\"')
         {
             
             // "" style includes
             String path = st.sval;
             
             ast.add(new PreprocessorLocalInclude(path));
+            parserState = PARSER_STATE_IDLE;
+        }
+        else if (token == '<')
+        {
+            
+            // "" style includes
+            String path = st.untokenizedStream();
+            if (!path.endsWith(">"))
+                throw new RuntimeException();
+            
+            path = path.substring(0, path.length()-1);
+            
+            ast.add(new PreprocessorGlobalInclude(path));
             parserState = PARSER_STATE_IDLE;
         }
         else
@@ -1051,6 +1065,10 @@ class CPPParser
 
     void dumpXML() throws FileNotFoundException
     {
+        if (outputFile == null)
+            // ignore it if there is no output file
+            return;
+        
         XmlPrinter printer = new XmlPrinter(doc);
         printer.dumpASTToFile(outputFile);
     }
