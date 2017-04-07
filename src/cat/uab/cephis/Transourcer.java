@@ -17,9 +17,7 @@
 package cat.uab.cephis;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import cat.uab.cephis.ast.AST;
@@ -109,8 +107,11 @@ public class Transourcer
             // TODO code application logic here
             CPPParser parser = new CPPParser();
             
-            parser.setXMLOutput(new File("c:\\temp\\test.xml"));
-            
+            if (doCreateInputAstXml)
+            {
+                File dir = inputFile.getParentFile();
+               parser.setXMLOutput(new File(dir, inputFile.getName() + ".xml"));
+            }
             
             AST ast = parser.createAST(inputFile);
             
