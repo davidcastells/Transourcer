@@ -775,7 +775,11 @@ public class StreamTokenizer {
             return ttype;
         }
 
-        if (c == '/' && (slashSlashCommentsP || slashStarCommentsP)) {
+        if (c == '#')
+            return readPreprocessorLine();
+
+        if (c == '/' && (slashSlashCommentsP || slashStarCommentsP)) 
+        {
             c = read();
             if (c == '*' && slashStarCommentsP) {
                 int prevc = 0;
