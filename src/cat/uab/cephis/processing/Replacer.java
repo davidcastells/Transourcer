@@ -18,6 +18,7 @@ package cat.uab.cephis.processing;
 
 import java.util.ArrayList;
 import cat.uab.cephis.ast.AST;
+import cat.uab.cephis.ast.Argument;
 import cat.uab.cephis.ast.AssignmentExpression;
 import cat.uab.cephis.ast.FunctionInvocation;
 import cat.uab.cephis.ast.ReturnStatement;
@@ -39,23 +40,43 @@ public class Replacer
             @Override
             public boolean matches(AST node)
             {
-                if (!(node instanceof VariableReference))
+                if (node instanceof VariableReference)
+                {
+                    VariableReference ref = (VariableReference) node;
+
+                    if (ref.name.equals(from))
+                        return true;
+
                     return false;
-                
-                VariableReference ref = (VariableReference) node;
-                
-                if (ref.name.equals(from))
-                    return true;
-                
-                return false;
+                }
+                else if (node instanceof Argument)
+                {
+                    // @todo this should not be necessary if we would build a correct AST from a function invocation
+                    Argument ref = (Argument) node;
+
+                    if (ref.name.equals(from))
+                        return true;
+
+                    return false;
+                }
+                else
+                    return false;
             }
         });
         
         for (AST node : nodes)
         {
-            VariableReference ref = (VariableReference) node;
-            
-            ref.name = toName;
+            if (node instanceof VariableReference)
+            {
+                VariableReference ref = (VariableReference) node;
+
+                ref.name = toName;
+            }
+            else
+            {
+                ((Argument)node).name = toName;
+            }
+                    
         }
     }
 
@@ -106,6 +127,16 @@ public class Replacer
 
                     return true;
                 }
+                else if (node instanceof Argument)
+                {
+                    // @todo this should be avoided when correctly parsing function invocations
+                    Argument ref = (Argument) node;
+                
+                    if (variablesNotToPrefix.contains(ref.name))
+                        return false;
+
+                    return true;
+                }
                 else
                     return false;
             }
@@ -131,6 +162,14 @@ public class Replacer
 
                 ref.name = prefix + ref.name;
             }
+            else if (node instanceof Argument)
+            {
+                Argument ref = (Argument) node;
+
+                ref.name = prefix + ref.name;
+            }
+            else
+                throw new RuntimeException();
         }
     }
 
