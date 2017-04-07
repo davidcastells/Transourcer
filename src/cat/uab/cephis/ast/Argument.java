@@ -23,7 +23,7 @@ package cat.uab.cephis.ast;
 public class Argument extends AST
 {
     
-    public final String name;
+    public  String name;
     private final String modifiers;
     private TypeSpecifier type;
     private boolean passedByValue = true;
