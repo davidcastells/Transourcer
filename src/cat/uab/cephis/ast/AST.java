@@ -31,6 +31,23 @@ public class AST extends ArrayList<AST>
     {
         return "";
     }
+
+    /**
+     * Check for exact the same reference (not for equality as ArrayList does)
+     * @param o
+     * @return 
+     */
+    @Override
+    public int indexOf(Object o)
+    {
+        for (int i=0; i < size(); i++)
+            if (get(i) == o)
+                return i;
+        
+        return -1;
+    }
+    
+    
     
     @Override
     public String toString()
