@@ -16,6 +16,7 @@
  */
 package cat.uab.cephis;
 
+import cat.uab.cephis.analysis.Hierarchy;
 import cat.uab.cephis.tokenizer.CPPTokenizer;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,6 +33,7 @@ import cat.uab.cephis.ast.Argument;
 import cat.uab.cephis.ast.ArithmeticExpression;
 import cat.uab.cephis.ast.ArrayDimension;
 import cat.uab.cephis.ast.AssignmentExpression;
+import cat.uab.cephis.ast.Comment;
 import cat.uab.cephis.ast.Empty;
 import cat.uab.cephis.ast.ExpressionBlock;
 import cat.uab.cephis.ast.ForStatement;
@@ -72,6 +74,13 @@ class CPPParser
     int parserState = PARSER_STATE_IDLE;
     private File outputFile;
     private AST doc;
+    
+    public boolean verbose = false;
+    
+    public CPPParser(boolean b)
+    {
+        verbose = b;
+    }
     
     AST createAST(File file) throws FileNotFoundException
     {
@@ -171,6 +180,10 @@ class CPPParser
             case 35:
                 parserState = PARSER_STATE_PREPROCESSOR;
                 break;
+            case StreamTokenizer.TT_COMMENT:
+                st.pushBack(tk);
+                parseComment(ast);
+                break;
             default:
                 throw new RuntimeException("Unexpected token : " + tk);
                 //System.out.println("TK[" +  tk.token + "]");
@@ -262,6 +275,9 @@ class CPPParser
         parseFunctionDeclaration(decl);
         
         def.name = decl.name;
+        
+        if (verbose)
+            System.out.println("[INFO] parsing function definition " + def.name);
         
         StatementsBlock block = new StatementsBlock();
         def.add(block);
@@ -399,10 +415,8 @@ class CPPParser
 
         parseExpression(def, endingCode, consumeEndingCode);
         
-        commaPos = st.findTokenPos(CPPTokenizer.TOKEN_CODE_COMMA);
- 
-        if (commaPos >= 0)
-            throw new RuntimeException("not supported yet");
+        if (st.peekNextToken().token == CPPTokenizer.TOKEN_CODE_COMMA)
+            throw new RuntimeException("Comma not supported yet in line " + token.lineNumber);
     
 //        if (consumeEndingCode)
 //            st.nextToken();
@@ -671,6 +685,9 @@ class CPPParser
 //                    
 //                    throw new RuntimeException("INTERRUPTED By ERRORS");
 //                }
+            case StreamTokenizer.TT_COMMENT:
+                parseComment(ast);
+                break;
             default:
                 // unknown case, parse as a regular expression
   
@@ -738,6 +755,18 @@ class CPPParser
             
             parseExpression(arit, endingCode, consumeEndingCode);
         }
+        else if (nextToken.isUnaryLogicalOperator())
+        {
+            LogicalExpression arit = new LogicalExpression();
+            ast.add(arit);
+            
+            st.consumeToken(nextToken.token);
+            
+            arit.setOperator(nextToken.sval);
+            arit.setUnary(true);
+            
+            parseExpression(arit, endingCode, consumeEndingCode);
+        }
         else if (nextToken.isAnyOperator())
         {
             // Arithmetic operators are not expected
@@ -789,7 +818,7 @@ class CPPParser
             if (consumeEndingCode)
                 st.consumeToken(endingCode);// consume endingCode
         }
-        else if (st.hasFunctionInvocationBefore(endingCode))
+        else if (st.hasFunctionInvocation())
         {
             // function invocation
             FunctionInvocation func = new FunctionInvocation();
@@ -801,6 +830,13 @@ class CPPParser
             VariableReference ref = new VariableReference();
             ast.add(ref);
             parseVariableReference(ref, endingCode, consumeEndingCode);
+        }
+        else if (nextToken.token == CPPTokenizer.TOKEN_CODE_CLOSE_PARENTHESIS)
+        {
+            if (Hierarchy.inFunctionInvocation(ast))
+                return;
+
+            throw new RuntimeException("Unexpected tokens " + debug );
         }
         else
         {
@@ -1092,22 +1128,27 @@ class CPPParser
         boolean doRun = true;
         do
         {
-            int parameterEndCode = st.hasTokenBeforeToken(CPPTokenizer.TOKEN_CODE_COMMA, CPPTokenizer.TOKEN_CODE_CLOSE_PARENTHESIS) ? 
-                    CPPTokenizer.TOKEN_CODE_COMMA : CPPTokenizer.TOKEN_CODE_CLOSE_PARENTHESIS;
-
-            ArrayList<CPPToken> tokens = st.nextTokensBefore(parameterEndCode);
-
-            Argument arg = createArgumentFromTokens(tokens);
-
-            func.add(arg);
+            int childrenCount = func.size();
+            parseExpression(func, ',', true);
+            doRun = childrenCount != func.size();
             
-            doRun = parameterEndCode == CPPTokenizer.TOKEN_CODE_COMMA;
-            
-            st.consumeToken(parameterEndCode);
+//            int parameterEndCode = st.hasTokenBeforeToken(CPPTokenizer.TOKEN_CODE_COMMA, CPPTokenizer.TOKEN_CODE_CLOSE_PARENTHESIS) ? 
+//                    CPPTokenizer.TOKEN_CODE_COMMA : CPPTokenizer.TOKEN_CODE_CLOSE_PARENTHESIS;
+//
+//            ArrayList<CPPToken> tokens = st.nextTokensBefore(parameterEndCode);
+//
+//            Argument arg = createArgumentFromTokens(tokens);
+//
+//            func.add(arg);
+//            
+//            doRun = parameterEndCode == CPPTokenizer.TOKEN_CODE_COMMA;
+//            
+//            st.consumeToken(parameterEndCode);
             
         } while (doRun);        
 
-
+        st.consumeToken(CPPTokenizer.TOKEN_CODE_CLOSE_PARENTHESIS);
+        
         if (!st.isNextToken(endingCode))
             parseUnexpectedToken(func, endingCode, consumeEndingCode);
         else if (consumeEndingCode)
@@ -1221,17 +1262,32 @@ class CPPParser
                     ArithmeticExpression arit = new ArithmeticExpression();
                     parent.add(arit);
                     arit.add(ast);
-                    arit.add(new LiteralNumber(token.sval.substring(1)));
+                    //arit.add(new LiteralNumber(token.sval.substring(1)));
                     arit.setOperator("-");
                     
                     dumpXML();
                     
-                    // parseExpression(arit, endingCode, consumeEndingCode);
+                    CPPToken numtk = new CPPToken(token.token, token.sval.substring(1), token.lineNumber);
+                    st.pushBack(numtk);
+                    
+                    parseExpression(arit, endingCode, consumeEndingCode);
 
             }
             else
                 throw new RuntimeException("Found number token "  + token.toString() + " not supported yet in line " + st.st.lineno());
               
+        }
+        else if (token.token == ')')
+        {
+            parent.add(ast);
+            if (Hierarchy.inFunctionInvocation(ast))
+            {
+                boolean isOk = Hierarchy.checkValidAscending(ast);
+                // we close the loop 
+                st.pushBack(token);
+            }
+            else
+                throw new RuntimeException("Found token "  + token.toString() + " not supported yet in line " + st.st.lineno());            
         }
         else
         {
@@ -1324,7 +1380,13 @@ class CPPParser
 
         CPPToken dummy = st.nextToken();    // consume if
         
-
+        if (st.peekNextToken().token == ';')
+        {
+            // handle return on void functions
+            st.nextToken();
+            return;
+        }
+        
         parseExpression(retst, CPPTokenizer.TOKEN_CODE_SEMICOLON, true);
     }
 
@@ -1338,6 +1400,21 @@ class CPPParser
         parseExpression(wst, CPPTokenizer.TOKEN_CODE_CLOSE_PARENTHESIS, true);
         
         parseSimpleStatementOrBlock(wst);
+    }
+
+    /**
+     * Parses an incomming comment token
+     * @param ast 
+     */
+    private void parseComment(AST ast) throws IOException
+    {
+        CPPToken tk = st.nextToken();
+        Comment cmt = null;
+        if (tk.sval.startsWith("//"))
+            cmt = new Comment(tk.sval.substring(2), true);
+        else
+            cmt = new Comment(tk.sval.substring(2, tk.sval.length()-2));
+        ast.add(cmt);
     }
     
     
