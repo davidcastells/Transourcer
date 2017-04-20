@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import cat.uab.cephis.ast.AST;
 import cat.uab.cephis.processing.Inliner;
+import cat.uab.cephis.processing.Remover;
 
 /**
  * Simple Source 2 Source Java Based Framework 
@@ -33,6 +34,7 @@ public class Transourcer
 {
 
     /**
+     * Minimal simple main
      * @param args the command line arguments
      */
     public static void main(String[] args)
@@ -45,12 +47,15 @@ public class Transourcer
     private boolean doForceInline = false;  
     private boolean doHelp = false;
     private boolean doCreateInputAstXml = false;
-    private File inputFile = null;
+    private boolean doVerbose = false;
+    private boolean doRemoveComments = false;
+private File inputFile = null;
     private File outputFile = null;
-
+    
     /**
-     * Parse program arguments
-     * @param args 
+     * Parse program arguments setting the member variables that will be used
+     * in the run method
+     * @param args list of command line arguments
      */
     private void parseArgs(String[] args)
     {
@@ -64,6 +69,10 @@ public class Transourcer
                 doCreateInputAstXml = true;
             else if (args[i].equals("--output-file"))
                 outputFile = new File(args[++i]);
+            else if (args[i].equals("--no-comments"))
+                doRemoveComments = true;
+            else if (args[i].equals("--verbose"))
+                doVerbose = true;
             else
                 inputFile = new File(args[i]);
             
@@ -83,6 +92,9 @@ public class Transourcer
         }
     }
 
+    /**
+     * Prints a help message
+     */
     private void printUsage()
     {
         System.out.println("Usage:");
@@ -93,8 +105,14 @@ public class Transourcer
         System.out.println("  --handle-pragma-forceinline   performs function inlining of the pragmas");
         System.out.println("  --create-input-ast-xml        creates a XML representation of the input file AST");
         System.out.println("  --output-file <file>          specifies the output file");
+        System.out.println("  --no-comments                 removes all comments from the output");
+        System.out.println("  --verbose                     generates debugging info");
     }
     
+    /**
+     * Does the work instructed by the fields that are assigned during argument
+     * parsing
+     */
     private void run()
     {
         if (doHelp)
@@ -104,8 +122,11 @@ public class Transourcer
         
         try
         {
+            if (doVerbose)
+                System.out.println("[INFO] Start Parsing");
+            
             // TODO code application logic here
-            CPPParser parser = new CPPParser();
+            CPPParser parser = new CPPParser(doVerbose);
             
             if (doCreateInputAstXml)
             {
@@ -119,11 +140,25 @@ public class Transourcer
             
             if (doForceInline)
             {
-                Inliner inliner = new Inliner(ast);
+                if (doVerbose)
+                    System.out.println("[INFO] Doing Inlining");
+            
+                Inliner inliner = new Inliner(ast, doVerbose);
                 ast = inliner.handlePragmaForceInline();
                 
                 XmlPrinter printer = new XmlPrinter(ast);
                 printer.dumpASTToFile(new File("c:\\temp\\test.inlined.xml"));
+            }
+            
+            if (doRemoveComments)
+            {
+                if (doVerbose)
+                    System.out.println("[INFO] Removing Comments");
+            
+                Remover remover = new Remover(ast);
+                ast = remover.removeComments();
+                XmlPrinter printer = new XmlPrinter(ast);
+                printer.dumpASTToFile(new File("c:\\temp\\test.nocomments.xml"));                
             }
             
             CPPWriter writer = new CPPWriter(ast);
