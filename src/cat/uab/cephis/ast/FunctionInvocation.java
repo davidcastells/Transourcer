@@ -32,20 +32,9 @@ public class FunctionInvocation extends AST
         return "name=\"" + name +"\"";
     }
 
-    public ArrayList<Argument> getArguments()
+    public ArrayList<AST> getArguments()
     {
-        ArrayList<Argument> ret = new ArrayList<Argument>();
-        
-        if (size() == 0)
-            return ret;
-        
-        for (AST child : this)
-        {
-            if (child instanceof Argument)
-                ret.add((Argument)child);
-        }
-        
-        return ret;
+        return this;
     }
     
 }
