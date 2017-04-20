@@ -34,10 +34,14 @@ public class Commenter
      */
     static void addBefore(AST node, String str)
     {
-        Comment comment = new Comment(str);
-        comment.setSingleLine(true);
+        Comment comment = new Comment(str, true);
             
         Inserter.insertBefore(node, comment);
     }
-    
+
+    static void addAfter(AST node, String str)
+    {
+        Comment comment = new Comment(str, true);
+        Inserter.insertAfter(node, comment);
+    }
 }
