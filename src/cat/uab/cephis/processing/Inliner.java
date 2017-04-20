@@ -16,6 +16,7 @@
  */
 package cat.uab.cephis.processing;
 
+import cat.uab.cephis.TextUtils;
 import java.util.ArrayList;
 import cat.uab.cephis.analysis.ExecutionBranches;
 import cat.uab.cephis.analysis.Hierarchy;
@@ -26,6 +27,7 @@ import cat.uab.cephis.ast.Comment;
 import cat.uab.cephis.ast.FunctionDeclaration;
 import cat.uab.cephis.ast.FunctionDefinition;
 import cat.uab.cephis.ast.FunctionInvocation;
+import cat.uab.cephis.ast.LiteralNumber;
 import cat.uab.cephis.ast.PreprocessorPragma;
 import cat.uab.cephis.ast.ReturnStatement;
 import cat.uab.cephis.ast.StatementsBlock;
@@ -44,14 +46,16 @@ public class Inliner
     
     private static int inlineCounter = 0;
 
-    public Inliner(AST ast)
+    public Inliner(AST ast, boolean verbose)
     {
         this.ast = Cloner.clone(ast);
+        this.verbose = verbose;
     }
 
     /**
      * Handle pragma force inline recursive
-     * @return 
+     * @return A new object with the orginal ast with the substituted function 
+     *      invocations
      */
     public AST handlePragmaForceInline()
     {
@@ -69,13 +73,13 @@ public class Inliner
                 {
                     inlineFunction((FunctionInvocation) nextAST);
                     // Now inline all the function invocations in the inlined block
-                    nextAST = pragma;
-                    do
-                    {
-                        nextAST = Hierarchy.getNextSibling(nextAST);
-                    } while (!(nextAST instanceof StatementsBlock));
+                    nextAST = Hierarchy.getNextSiblingOfClass(pragma, StatementsBlock.class);
                     
-                    inlineFunctionsCalledIn(nextAST);
+                    // if function definition was not found nextAST will be null
+                    if (nextAST == null)
+                        Commenter.addAfter(pragma, "[Transourcer - WARNING] Function body was not found");
+                    else
+                        inlineFunctionsCalledIn(nextAST);
                 }
                 else
                     inlineFunctionsCalledIn(nextAST);
@@ -197,6 +201,10 @@ public class Inliner
         FunctionDeclaration decl = findFunctionDeclaration(ast, inv.name);
         FunctionDefinition def = findFunctionDefinition(ast, inv.name);
 
+
+        if (verbose)
+            System.out.println("[INFO] Inlining function " + inv.name);
+
         if (def == null)
         {
             System.out.println("[WARNING] definition of function " + inv.name + " not found!");
@@ -238,9 +246,13 @@ public class Inliner
         // it's important to know if parameters are passed by value or by reference
         // because parameters passed by value will create a local copy
         // wether referenced ones will be used directly
-        ArrayList<Argument> invArgs = inv.getArguments();
+        ArrayList<AST> invArgs = inv.getArguments();
         ArrayList<Argument> declArgs = decl.getArguments();
 
+        if (invArgs.size() != declArgs.size())
+            throw new RuntimeException("Invocation of function " + inv.name + " mitmatched number of arguments. Declaration has " + declArgs.size() 
+                    + " arguments while invocation has " + invArgs.size());
+        
         ArrayList<String> variablesNotToPrefix = new ArrayList<String>();
         variablesNotToPrefix.add("inlined_ret_val_" + inlineCounter);
 
@@ -250,30 +262,54 @@ public class Inliner
         for (int i=0; i < declArgs.size(); i++)
         {
             Argument declArg = declArgs.get(i);
-            Argument invArg = invArgs.get(i);
-            System.out.print("[INFO] arg["+i+"] " + (declArg.isPassedByValue()?"V":"R") + " " );
+            AST invArg = invArgs.get(i);
+            
+            if (verbose)
+                System.out.print("[INFO] arg["+i+"] " + (declArg.isPassedByValue()?"V":"R") + " " );
 
-            variablesNotToPrefix.add(invArg.name);
+            ArrayList<AST> refsInArgument = Matcher.findAllMatchingFromClass(invArg, VariableReference.class);
+
+            for (AST refInArg : refsInArgument) 
+                variablesNotToPrefix.add(((VariableReference)refInArg).name);
 
             if (declArg.isPassedByValue())
             {
-                System.out.println("[INFO] Assign " + declArg.name + " = " +  invArg.name);
+                if (verbose)
+                    System.out.println("[INFO] Assign " + declArg.name + " = " +  invArg);
 
                 AST firstFunctionExpression = funcBody.get(0);
 
                 AssignmentExpression assign = new AssignmentExpression("=");
                 VariableDeclaration ref = new VariableDeclaration(declArg.name);
                 ref.add(declArg.getType());
-                VariableReference parRef = new VariableReference(invArg.name);
                 assign.add(ref);
-                assign.add(parRef);
+
+                assign.add(Cloner.clone(invArg));
+//                // @todo when correctly parsing function invocations this shouldn't be necessary
+//                if (TextUtils.isNumber(invArg.name))
+//                {
+//                    LiteralNumber lit = new LiteralNumber(invArg.name);
+//                    assign.add(lit);
+//                }
+//                else
+//                {
+//                    VariableReference parRef = new VariableReference(invArg.name);
+//                    assign.add(parRef);
+//                }
+
                 funcBody.add(0, assign);
             }
             else
             {
-                System.out.println("[INFO] Replace " + declArg.name + " by " +  invArg.name);
+                if (!(invArg instanceof VariableReference))
+                    throw new RuntimeException("reference arguments should be variable references");
+                
+                VariableReference varref = (VariableReference) invArg;
+                
+                if (verbose)
+                    System.out.println("[INFO] Replace " + declArg.name + " by " +  varref.name);
 
-                Replacer.replaceVariableReferences(funcBody, declArg.name, invArg.name);
+                Replacer.replaceVariableReferences(funcBody, declArg.name, varref.name);
             }    
         }
 
