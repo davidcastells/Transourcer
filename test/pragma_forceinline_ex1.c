@@ -1,8 +1,7 @@
 #include <stdio.h>
 
 //=============================
-// ALMOST WORKING CORRECTLY
-// Missing comments
+// WORKING CORRECTLY
 //=============================
 // Test it by running
 //  java -jar ../dist/Transourcer.jar --create-input-ast-xml --handle-pragma-forceinline pragma_forceinline_ex1.c
