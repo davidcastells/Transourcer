@@ -181,6 +181,7 @@ public class StreamTokenizer {
      */
     public static final int TT_OPERATOR = -5;
     public static final int TT_PREPROCESSOR = -6;
+    public static final int TT_COMMENT = -7;
     
     /**
      * If the current token is a word token, this field contains a
@@ -215,46 +216,6 @@ public class StreamTokenizer {
     }
 
     /**
-     * Creates a stream tokenizer that parses the specified input
-     * stream. The stream tokenizer is initialized to the following
-     * default state:
-     * <ul>
-     * <li>All byte values <code>'A'</code> through <code>'Z'</code>,
-     *     <code>'a'</code> through <code>'z'</code>, and
-     *     <code>'&#92;u00A0'</code> through <code>'&#92;u00FF'</code> are
-     *     considered to be alphabetic.
-     * <li>All byte values <code>'&#92;u0000'</code> through
-     *     <code>'&#92;u0020'</code> are considered to be white space.
-     * <li><code>'/'</code> is a comment character.
-     * <li>Single quote <code>'&#92;''</code> and double quote <code>'"'</code>
-     *     are string quote characters.
-     * <li>Numbers are parsed.
-     * <li>Ends of lines are treated as white space, not as separate tokens.
-     * <li>C-style and C++-style comments are not recognized.
-     * </ul>
-     *
-     * @deprecated As of JDK version 1.1, the preferred way to tokenize an
-     * input stream is to convert it into a character stream, for example:
-     * <blockquote><pre>
-     *   Reader r = new BufferedReader(new InputStreamReader(is));
-     *   StreamTokenizer st = new StreamTokenizer(r);
-     * </pre></blockquote>
-     *
-     * @param      is        an input stream.
-     * @see        java.io.BufferedReader
-     * @see        java.io.InputStreamReader
-     * @see        java.io.StreamTokenizer#StreamTokenizer(java.io.Reader)
-     */
-    @Deprecated
-    public StreamTokenizer(InputStream is) {
-        this();
-        if (is == null) {
-            throw new NullPointerException();
-        }
-        input = is;
-    }
-
-    /**
      * Create a tokenizer that parses the given character stream.
      *
      * @param r  a Reader object providing the input stream.
@@ -268,17 +229,7 @@ public class StreamTokenizer {
         reader = r;
     }
 
-    /**
-     * Resets this tokenizer's syntax table so that all characters are
-     * "ordinary." See the <code>ordinaryChar</code> method
-     * for more information on a character being ordinary.
-     *
-     * @see     java.io.StreamTokenizer#ordinaryChar(int)
-     */
-    public void resetSyntax() {
-        for (int i = ctype.length; --i >= 0;)
-            ctype[i] = 0;
-    }
+    
 
     /**
      * Specifies that all characters <i>c</i> in the range
@@ -428,7 +379,7 @@ public class StreamTokenizer {
         for (int i = '0'; i <= '9'; i++)
             ctype[i] |= CT_DIGIT;
         ctype['.'] |= CT_DIGIT;
-        ctype['-'] |= CT_DIGIT;
+//        ctype['-'] |= CT_DIGIT;
     }
 
     /**
@@ -615,7 +566,7 @@ public class StreamTokenizer {
             ctype = c < 256 ? ct[c] : CT_ALPHA;
         }
 
-        if ((ctype & CT_DIGIT) != 0) 
+        if (((ctype & CT_DIGIT) != 0) || (c == '-'))
         {
             boolean isHexa = false;
             String v = "";
@@ -781,33 +732,60 @@ public class StreamTokenizer {
         if (c == '/' && (slashSlashCommentsP || slashStarCommentsP)) 
         {
             c = read();
-            if (c == '*' && slashStarCommentsP) {
+            if (c == '*' && slashStarCommentsP) 
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append("/*");
+                
                 int prevc = 0;
-                while ((c = read()) != '/' || prevc != '*') {
+                while ((c = read()) != '/' || prevc != '*')
+                {
                     if (c == '\r') {
                         LINENO++;
                         c = read();
-                        if (c == '\n') {
+                        if (c == '\n') 
+                        {
+                            sb.append((char)c);
                             c = read();
                         }
-                    } else {
-                        if (c == '\n') {
+                    } 
+                    else 
+                    {
+                        if (c == '\n') 
+                        {
                             LINENO++;
                             c = read();
                         }
+
+                        sb.append((char)c);
+
                     }
                     if (c < 0)
                         return ttype = TT_EOF;
                     prevc = c;
                 }
-                return nextToken();
-            } else if (c == '/' && slashSlashCommentsP) {
-                while ((c = read()) != '\n' && c != '\r' && c >= 0);
+                sb.append('/');
+                sval = sb.toString();
+                return TT_COMMENT;
+//                return nextToken();
+            } 
+            else if (c == '/' && slashSlashCommentsP) 
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append("//");
+                while ((c = read()) != '\n' && c != '\r' && c >= 0)
+                    sb.append((char)c);
+                
                 peekc = c;
-                return nextToken();
-            } else {
+                sval = sb.toString();
+//                return nextToken();
+                return TT_COMMENT;
+            } 
+            else 
+            {
                 /* Now see if it is still a single line comment */
-                if ((ct['/'] & CT_COMMENT) != 0) {
+                if ((ct['/'] & CT_COMMENT) != 0) 
+                {
                     while ((c = read()) != '\n' && c != '\r' && c >= 0);
                     peekc = c;
                     return nextToken();
