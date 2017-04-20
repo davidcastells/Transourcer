@@ -19,7 +19,8 @@ package cat.uab.cephis.ast;
 import cat.uab.cephis.TextUtils;
 
 /**
- *
+ * This object represents a comment in the source code, either multiline
+ * or single line (c++ style)
  * @author dcr
  */
 public class Comment extends AST
@@ -27,28 +28,49 @@ public class Comment extends AST
     public String comment;
     private boolean singleLine = false;
 
+    /**
+     * Creates an old style C comment
+     * @param string the text of the comment
+     */
     public Comment(String string)
     {
         comment = string;
     }
     
+    /**
+     * Creates a comment, optionally single line style
+     * @param string comment text
+     * @param b true to create single line comments
+     */
     public Comment(String string, boolean b)
     {
         comment = string;
         singleLine = b;
     }
 
+    /**
+     * Properties for XML 
+     * @return 
+     */
     @Override
     public String getProperties()
     {
         return "comment=\"" + TextUtils.encode(comment) + "\"";
     }
 
+    /**
+     * Use it to change the style of the comment to single line or multiline
+     * @param b 
+     */
     public void setSingleLine(boolean b)
     {
         this.singleLine = b;
     }
 
+    /**
+     * 
+     * @return true if this is a single line comment
+     */
     public boolean isSingleLine()
     {
         return singleLine;
