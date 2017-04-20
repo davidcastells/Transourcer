@@ -48,7 +48,11 @@ import cat.uab.cephis.ast.VariableReference;
 import cat.uab.cephis.ast.WhileStatement;
 
 /**
- *
+ * CPP Writer, this class is responsible for creating a C source code from a 
+ * AST object
+ * It does so by traversing the AST (depth first) and translating all AST 
+ * objects.
+ * 
  * @author dcr
  */
 class CPPWriter
@@ -72,7 +76,18 @@ class CPPWriter
     
     void dumpAST()
     {
-        deepFirstDump(ast);
+        firstLevelDump(ast);
+    }
+    
+    void firstLevelDump(AST ast)
+    {
+        for (AST child : ast)
+        {
+            deepFirstDump(child);
+            
+            if (child instanceof VariableDeclaration)
+                System.out.println(";");
+        }
     }
 
     private void deepFirstDump(AST ast)
@@ -215,6 +230,7 @@ class CPPWriter
             for (AST child : ast)
             {
                 deepFirstDump(child);
+                
             }
 
             if (ast != this.ast)
@@ -377,11 +393,23 @@ class CPPWriter
         System.out.print(")");
     }
 
+    /**
+     * Dump a logical expression. They can be either unary or binary
+     * @param log 
+     */
     private void dumpLogical(LogicalExpression log)
     {
-        deepFirstDump(log.get(0));
-        System.out.print(" " + log.operator + " ");
-        deepFirstDump(log.get(1));
+        if (log.isUnary())
+        {
+            System.out.print(log.operator + " ");
+            deepFirstDump(log.get(0));
+        }
+        else
+        {
+            deepFirstDump(log.get(0));
+            System.out.print(" " + log.operator + " ");
+            deepFirstDump(log.get(1));
+        }
     }
 
     private void dumpVariableDefinition(VariableDefinition var)
@@ -568,7 +596,8 @@ class CPPWriter
     {
         System.out.print("return ");
         
-        deepFirstDump(st.get(0));
+        if (st.size() > 0)
+            deepFirstDump(st.get(0));
     }
 
     private void dumpWhile(WhileStatement wst)
