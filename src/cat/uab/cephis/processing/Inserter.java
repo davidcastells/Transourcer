@@ -37,7 +37,22 @@ public class Inserter
         int i = parent.indexOf(node);
             
         parent.add(i, newNode);
-
+    }
+    
+    /**
+     * Insert newNode after node
+     * @param node
+     * @param newNode 
+     */
+    static void insertAfter(AST node, AST newNode)
+    {
+        AST parent = node.getParent();
+        int i = parent.indexOf(node);
+        
+        if (i == parent.size()-1)
+            parent.add(newNode);
+        else
+            parent.add(i+1, newNode);
     }
     
 }
