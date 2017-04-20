@@ -42,5 +42,19 @@ public class TextUtils
         return out.toString();
     }
 
+    public static boolean isNumber(String name)
+    {
+        char c = name.charAt(0);
+        
+        if (c >= '0' && c <= '9')
+            return true;
+        if (c == '-')
+            return true;
+        if (c == '.')
+            return true;
+        
+        return false;
+    }
+
     
 }
