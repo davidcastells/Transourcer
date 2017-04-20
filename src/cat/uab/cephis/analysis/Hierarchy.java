@@ -20,6 +20,7 @@ import cat.uab.cephis.ast.AST;
 import cat.uab.cephis.ast.FunctionDefinition;
 import cat.uab.cephis.ast.FunctionInvocation;
 import cat.uab.cephis.ast.PreprocessorPragma;
+import cat.uab.cephis.ast.StatementsBlock;
 
 /**
  *
@@ -28,11 +29,18 @@ import cat.uab.cephis.ast.PreprocessorPragma;
 public class Hierarchy
 {
 
+    /**
+     * Gets the next sibling of the given AST
+     * @param ast object 
+     * @return the next AST sibling or null if it is already the last element
+     */
     public static AST getNextSibling(AST ast)
     {
         AST parent = ast.getParent();
         int pos = parent.indexOf(ast);
         if (pos == -1)
+            return null;
+        if (pos == (parent.size()-1))
             return null;
         return parent.get(pos+1);
     }
@@ -54,6 +62,57 @@ public class Hierarchy
             return ((FunctionInvocation)node).name;
         
         return node.getClass().getSimpleName();
+    }
+
+    /**
+     * Gets the next sibling of a given class
+     * @param nextAST
+     * @param clz
+     * @return 
+     */
+    public static AST getNextSiblingOfClass(AST nextAST, Class clz)
+    {        
+        do
+        {
+            nextAST = Hierarchy.getNextSibling(nextAST);
+            
+            if (nextAST == null)
+                return null;
+        } while (!(nextAST.getClass().equals(clz)));
+
+        return nextAST;
+    }
+
+    public static boolean inFunctionInvocation(AST ast)
+    {
+        if (ast == null)
+            return false;
+        
+        if (ast instanceof FunctionInvocation)
+            return true;
+        
+        return inFunctionInvocation(ast.getParent());
+    }
+
+    /**
+     * 
+     * @param ast
+     * @return 
+     */
+    public static boolean checkValidAscending(AST ast)
+    {
+        if (ast.getParent() == null)
+            return true;
+        
+        AST parent = ast.getParent();
+        
+        if (parent.indexOf(ast) == -1)
+        {
+            System.err.println("child " + ast.toString() + " not part of children of " + parent.toString());
+            return false;
+        }
+        
+        return checkValidAscending(parent);
     }
     
 }
