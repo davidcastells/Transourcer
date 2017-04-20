@@ -325,6 +325,9 @@ public class CPPTokenizer
         while (!prefetchBufferContainsToken(lastCode))
         {
             prefetchToken();
+            
+            if (prefetchBufferContainsToken(-1))
+                return;
         }
    }
 
@@ -483,6 +486,26 @@ public class CPPTokenizer
         }
     }
 
+    /**
+     * A function invocation is identified by a word + '('
+     * @return
+     * @throws IOException 
+     */
+    public boolean hasFunctionInvocation() throws IOException
+    {
+        // Make sure that we have two tokens prefetched
+        prefetchToken();
+        prefetchToken();
+        
+        return (peekToken(0).isWord() && (peekToken(1).token == '('));
+    }
+    
+    /**
+     * @deprecated 
+     * @param endingCode
+     * @return
+     * @throws IOException 
+     */
     public boolean hasFunctionInvocationBefore(int endingCode) throws IOException
     {
         prefetchUntilToken(endingCode);
@@ -557,6 +580,9 @@ public class CPPTokenizer
 
     public boolean hasVariableReference(int endingCode) throws IOException
     {
+        if (peekNextToken().token == TOKEN_CODE_CLOSE_PARENTHESIS)
+            return false;
+        
         prefetchUntilToken(endingCode);
         int posArray = findTokenPos(TOKEN_CODE_OPEN_ARRAY);
         int posEnd = findTokenPos(endingCode);
@@ -699,6 +725,15 @@ public class CPPTokenizer
             
             st.pushBack();
             return new CPPToken(StreamTokenizer.TT_OPERATOR, "/", st.lineno());
+        }
+        if (v == '%')
+        {
+            int v2 = st.nextToken();
+            if (v2 == '=')
+                return new CPPToken(StreamTokenizer.TT_OPERATOR, "%=", st.lineno());
+            
+            st.pushBack();
+            return new CPPToken(StreamTokenizer.TT_OPERATOR, "%", st.lineno());
         }
         if (v == '>')
         {
