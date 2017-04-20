@@ -27,7 +27,7 @@ public class CPPToken
     public String sval;
     public int lineNumber;
 
-    CPPToken(int v, String sval, int lineno)
+    public CPPToken(int v, String sval, int lineno)
     {
         token = v;
         if (v == StreamTokenizer.TT_WORD)
@@ -37,6 +37,8 @@ public class CPPToken
         else if (v == StreamTokenizer.TT_OPERATOR)
             this.sval = sval;
         else if (v == StreamTokenizer.TT_PREPROCESSOR)
+            this.sval = sval;
+        else if (v == StreamTokenizer.TT_COMMENT)
             this.sval = sval;
         else if (v == '\"')
         {
