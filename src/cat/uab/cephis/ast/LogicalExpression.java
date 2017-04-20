@@ -26,6 +26,7 @@ public class LogicalExpression extends AST
 {
 
     public String operator;
+    private boolean unary;
 
     
     @Override
@@ -38,5 +39,14 @@ public class LogicalExpression extends AST
     {
         this.operator = string;
     }
+
+    public void setUnary(boolean b)
+    {
+        unary = b;
+    }
     
+    public boolean isUnary()
+    {
+        return unary;
+    }
 }
