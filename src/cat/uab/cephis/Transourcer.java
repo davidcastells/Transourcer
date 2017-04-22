@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import cat.uab.cephis.ast.AST;
+import cat.uab.cephis.processing.ConstantPropagator;
 import cat.uab.cephis.processing.Inliner;
 import cat.uab.cephis.processing.Remover;
+import cat.uab.cephis.processing.Replacer;
 
 /**
  * Simple Source 2 Source Java Based Framework 
@@ -49,7 +51,9 @@ public class Transourcer
     private boolean doCreateInputAstXml = false;
     private boolean doVerbose = false;
     private boolean doRemoveComments = false;
-private File inputFile = null;
+    private boolean doRemoveConstantVariables = false;
+
+    private File inputFile = null;
     private File outputFile = null;
     
     /**
@@ -73,6 +77,8 @@ private File inputFile = null;
                 doRemoveComments = true;
             else if (args[i].equals("--verbose"))
                 doVerbose = true;
+            else if (args[i].equals("--no-constant-variables"))
+                doRemoveConstantVariables = true;
             else
                 inputFile = new File(args[i]);
             
@@ -106,6 +112,7 @@ private File inputFile = null;
         System.out.println("  --create-input-ast-xml        creates a XML representation of the input file AST");
         System.out.println("  --output-file <file>          specifies the output file");
         System.out.println("  --no-comments                 removes all comments from the output");
+        System.out.println("  --no-constant-variables       remove constant variables");
         System.out.println("  --verbose                     generates debugging info");
     }
     
@@ -159,6 +166,18 @@ private File inputFile = null;
                 ast = remover.removeComments();
                 XmlPrinter printer = new XmlPrinter(ast);
                 printer.dumpASTToFile(new File("c:\\temp\\test.nocomments.xml"));                
+            }
+            
+            if (doRemoveConstantVariables)
+            {
+                if (doVerbose)
+                    System.out.println("[INFO] Removing constant variables");
+                
+                
+                
+                ConstantPropagator propagator = new ConstantPropagator(ast);
+                propagator.setXmlOutput(new File("c:\\temp\\test.noconstants.xml"));
+                ast = propagator.removeConstantVariables();
             }
             
             CPPWriter writer = new CPPWriter(ast);

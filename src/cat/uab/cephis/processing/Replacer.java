@@ -33,6 +33,12 @@ import cat.uab.cephis.ast.VariableReference;
 public class Replacer
 {
 
+    /**
+     * 
+     * @param ast
+     * @param from
+     * @param toName 
+     */
     static void replaceVariableReferences(AST ast, String from, String toName)
     {
         ArrayList<AST> nodes = Matcher.findAllMatching(ast, new MatchingRule()
@@ -52,6 +58,65 @@ public class Replacer
                 else if (node instanceof Argument)
                 {
                     // @todo this should not be necessary if we would build a correct AST from a function invocation
+                    if (1<2) throw new RuntimeException("@deprecated");
+                    Argument ref = (Argument) node;
+
+                    if (ref.name.equals(from))
+                        return true;
+
+                    return false;
+                }
+                else
+                    return false;
+            }
+        });
+
+        for (AST node : nodes)
+        {
+            if (node instanceof VariableReference)
+            {
+                VariableReference ref = (VariableReference) node;
+
+                ref.name = toName;
+            }
+            else
+            {
+                if (1<2) throw new RuntimeException("@deprecated");
+                ((Argument)node).name = toName;
+            }
+
+        }
+    }
+        
+    /**
+     * @deprecated  should use the previous function using an AST as the second
+     * parameter
+     * @param ast   AST in which we replace variable references
+     * @param from  name of the variable we are replacing
+     * @param toName new name
+     */    
+    static void replaceVariableReferences(AST ast, String from, AST newNode)
+    {
+        ArrayList<AST> nodes = Matcher.findAllMatching(ast, new MatchingRule()
+        {
+            @Override
+            public boolean matches(AST node)
+            {
+                if (node instanceof VariableReference)
+                {
+                    VariableReference ref = (VariableReference) node;
+
+                    if (ref.name.equals(from))
+                        return true;
+
+                    return false;
+                }
+                else if (node instanceof Argument)
+                {
+                    // @todo this should not be necessary if we would build a correct AST from a function invocation
+                    if (node.getParent() instanceof FunctionInvocation) 
+                        throw new RuntimeException("@deprecated");
+                    
                     Argument ref = (Argument) node;
 
                     if (ref.name.equals(from))
@@ -66,17 +131,7 @@ public class Replacer
         
         for (AST node : nodes)
         {
-            if (node instanceof VariableReference)
-            {
-                VariableReference ref = (VariableReference) node;
-
-                ref.name = toName;
-            }
-            else
-            {
-                ((Argument)node).name = toName;
-            }
-                    
+            replaceNode(node, newNode);                    
         }
     }
 
@@ -189,6 +244,50 @@ public class Replacer
             assign.add(ret.get(0));
             
             replaceNode(ret, assign);
+        }
+    }
+
+    /**
+     * Replace Variable assigments of variable declarations to variable definitions
+     * @param ast 
+     */
+    public static void replaceVariableDeclarationAssigmentsByDefinitions(AST ast)
+    {
+        ArrayList<AST> nodes = Matcher.findAllMatching(ast, new MatchingRule()
+        {
+            @Override
+            public boolean matches(AST node)
+            {
+                if (node instanceof AssignmentExpression)
+                {
+                    AssignmentExpression ass = (AssignmentExpression) node;
+
+                    AST leftPart = ass.get(0);
+                    
+                    if (leftPart instanceof VariableDeclaration)
+                        return true;
+                    else
+                        return false;
+                }
+                else
+                    return false;
+            }
+        });
+        
+        for (AST node : nodes)
+        {
+            AssignmentExpression ass = (AssignmentExpression) node;
+            VariableDeclaration decl = (VariableDeclaration) ass.get(0);
+            AST value = ass.get(1);
+
+            VariableDefinition def = new VariableDefinition();
+            def.name = decl.name;
+            
+            Copier.copyChildren(decl, def);
+            
+            def.add(value);            
+            
+            replaceNode(node, def);                    
         }
     }
     

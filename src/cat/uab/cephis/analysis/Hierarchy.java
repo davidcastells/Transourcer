@@ -21,6 +21,7 @@ import cat.uab.cephis.ast.FunctionDefinition;
 import cat.uab.cephis.ast.FunctionInvocation;
 import cat.uab.cephis.ast.PreprocessorPragma;
 import cat.uab.cephis.ast.StatementsBlock;
+import cat.uab.cephis.ast.VariableDefinition;
 
 /**
  *
@@ -113,6 +114,46 @@ public class Hierarchy
         }
         
         return checkValidAscending(parent);
+    }
+
+    /**
+     * Gets the last child from a node
+     * @param node
+     * @return the child in the highest position of the array, or null
+     * if no child exist
+     */
+    public static AST getLastChild(AST node)
+    {
+        if (node.size()==0)
+            return null;
+        
+        return node.get(node.size()-1);
+    }
+
+    /**
+     * Returns the scope of this variable, which is either a function definition,
+     * a block (for local variables), or the whole AST for global variables
+     * 
+     * We find the scope by ascending into the hierarchy and returning the first 
+     * object being either FuncionDefinition, or StatementsBlock, or when parent 
+     * is null for global scope
+     * 
+     * @param node the variable AST
+     * @return 
+     */
+    public static AST getScope(AST node)
+    {
+        if (node instanceof FunctionDefinition)
+            return node;
+        else if (node instanceof StatementsBlock)
+            return node;
+        
+        AST parent = node.getParent();
+        
+        if (parent == null)
+            return node;
+        
+        return getScope(parent);
     }
     
 }

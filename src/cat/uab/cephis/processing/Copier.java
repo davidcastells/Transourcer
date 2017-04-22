@@ -17,43 +17,29 @@
 package cat.uab.cephis.processing;
 
 import cat.uab.cephis.ast.AST;
-import cat.uab.cephis.ast.Comment;
-import java.util.ArrayList;
+import cat.uab.cephis.ast.VariableDeclaration;
+import cat.uab.cephis.ast.VariableDefinition;
 
 /**
  *
  * @author dcr
  */
-public class Remover
+public class Copier
 {
-    private final AST ast;
-
-    public Remover(AST ast)
-    {
-        this.ast = Cloner.clone(ast);
-    }
 
     /**
-     * Remove all the comments from an AST
-     * @return 
+     * Copies the children from an object to the target object.
+     * The original children are cloned
+     * @param from
+     * @param to 
      */
-    public AST removeComments()
+    static void copyChildren(AST from, AST to)
     {
-        ArrayList<AST> comments = Matcher.findAllMatchingFromClass(ast, Comment.class);
-        
-        for (AST cmt : comments)
+        for (AST child : from)
         {
-            removeNode(cmt);
+            AST copy = Cloner.clone(child);
+            to.add(copy);
         }
-        
-        return ast;
-    }
-
-    public static void removeNode(AST cmt)
-    {
-        AST parent = cmt.getParent();
-        int pos = parent.indexOf(cmt);
-        parent.remove(pos);
     }
     
 }
