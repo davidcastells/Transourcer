@@ -25,16 +25,16 @@ import cat.uab.cephis.ast.AST;
  *
  * @author dcr
  */
-class XmlPrinter
+public class XmlPrinter
 {
     private final AST ast;
 
-    XmlPrinter(AST ast)
+    public XmlPrinter(AST ast)
     {
         this.ast = ast;
     }
 
-    void dumpASTToFile(File outputFile) throws FileNotFoundException
+    public void dumpASTToFile(File outputFile) throws FileNotFoundException
     {
         PrintStream oldOut = System.out;
         System.setOut(new PrintStream(outputFile));
