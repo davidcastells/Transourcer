@@ -16,6 +16,7 @@
  */
 package cat.uab.cephis.ast;
 
+import cat.uab.cephis.analysis.Hierarchy;
 import java.util.ArrayList;
 
 /**
@@ -45,7 +46,24 @@ public class VariableDefinition extends AST
     }
 
     
-    
+    public TypeSpecifier getType()
+    {
+        ArrayList<TypeSpecifier> types = getChildrenFromClass(TypeSpecifier.class);
+        
+        if (types.size() != 1)
+            throw new RuntimeException("No types");
+        
+        return types.get(0);
+    }
+
+    /**
+     * Gets the right part of the assignment in the definition
+     * @return 
+     */
+    public AST getInitialValue()
+    {
+        return Hierarchy.getLastChild(this);
+    }
     
     
     
