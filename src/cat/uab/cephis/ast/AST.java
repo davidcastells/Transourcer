@@ -113,6 +113,9 @@ public class AST extends ArrayList<AST>
 
     public AST getLastChild()
     {
+        if (size() == 0)
+            return null;
+        
         return get(size()-1);
     }
     
