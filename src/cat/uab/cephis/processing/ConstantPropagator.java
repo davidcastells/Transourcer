@@ -19,6 +19,7 @@ package cat.uab.cephis.processing;
 import cat.uab.cephis.XmlPrinter;
 import cat.uab.cephis.analysis.Hierarchy;
 import cat.uab.cephis.ast.AST;
+import cat.uab.cephis.ast.ExpressionBlock;
 import cat.uab.cephis.ast.TypeSpecifier;
 import cat.uab.cephis.ast.VariableDefinition;
 import java.io.File;
@@ -93,7 +94,21 @@ public class ConstantPropagator
             System.out.println("[INFO] Substituting constant " +  def.name);
 
             Remover.removeNode(def);
-            Replacer.replaceVariableReferences(Hierarchy.getScope(def), def.name, def.getInitialValue());
+            
+            // enclose initial value between ( ) if it is not an expression block already
+            AST initValue = Cloner.clone(def.getInitialValue());
+            ExpressionBlock expBlock = null;
+            
+            if (initValue instanceof ExpressionBlock)
+                expBlock = (ExpressionBlock) initValue;
+            else
+            {
+                expBlock = new ExpressionBlock();
+                expBlock.add(initValue);
+            }
+            
+            
+            Replacer.replaceVariableReferences(Hierarchy.getScope(def), def.name, expBlock);
             
             dumpXML();
         }
