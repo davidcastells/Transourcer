@@ -109,8 +109,6 @@ class CPPParser
 
     private void parseToken(AST ast) throws IOException
     {
-        
-        
         switch (parserState)
         {
             case PARSER_STATE_IDLE:
@@ -152,6 +150,8 @@ class CPPParser
                         FunctionDeclaration decl = new FunctionDeclaration();
                         ast.add(decl);
                         parseFunctionDeclaration(decl);
+                        st.consumeToken(CPPTokenizer.TOKEN_CODE_SEMICOLON);     // consume ;
+
                     }
                 }
                 else
@@ -769,6 +769,9 @@ class CPPParser
         }
         else if (nextToken.isAnyOperator())
         {
+            if (ast.getLastChild() == null)
+                throw new RuntimeException("Unexpected token " + nextToken + " at line " + nextToken.lineNumber);
+            
             // Arithmetic operators are not expected
             parseUnexpectedToken(ast.getLastChild(), endingCode, consumeEndingCode);
         }
