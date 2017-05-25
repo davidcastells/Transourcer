@@ -107,6 +107,12 @@ class CPPWriter
             dumpFunctionDefinition(((FunctionDefinition) ast));
             return;
         }
+        if (ast instanceof FunctionDeclaration)
+        {
+            dumpFunctionDeclaration(((FunctionDeclaration) ast));
+            return;
+        }
+
         if (ast instanceof StatementsBlock)
         {
             dumpStatementsBlock((StatementsBlock) ast);
@@ -561,7 +567,10 @@ class CPPWriter
             indent = lastIndent;
         }
         else
+        {
+            System.out.print(indentify());
             deepFirstDump(ifst.get(2));
+        }
     }
 
     private void reportError(AST var)
