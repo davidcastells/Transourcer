@@ -34,6 +34,19 @@ public class LiteralNumber extends AST
     {
         return "value=\"" + value + "\"";
     }
+
+    public boolean isInteger()
+    {
+        try
+        {
+            Integer.parseInt(value);
+            return true;
+        }
+        catch (NumberFormatException e)
+        {
+            return false;
+        }
+    }
     
     
     
