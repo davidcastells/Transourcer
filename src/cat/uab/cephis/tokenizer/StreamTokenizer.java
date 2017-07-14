@@ -599,6 +599,10 @@ public class StreamTokenizer {
                 }
                 else if (c >= '0' && c <= '9')
                     v += Character.toString((char) c);
+                else if (c == '.')
+                {
+                    // do nothing
+                }
                 else
                 {
                     peekc = c;
