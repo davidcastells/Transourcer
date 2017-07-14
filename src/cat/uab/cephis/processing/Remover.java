@@ -16,6 +16,7 @@
  */
 package cat.uab.cephis.processing;
 
+import cat.uab.cephis.analysis.Hierarchy;
 import cat.uab.cephis.ast.AST;
 import cat.uab.cephis.ast.Comment;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
  */
 public class Remover
 {
+
     private final AST ast;
 
     public Remover(AST ast)
@@ -53,7 +55,21 @@ public class Remover
     {
         AST parent = cmt.getParent();
         int pos = parent.indexOf(cmt);
+        
+        if (pos == -1)
+            throw new RuntimeException("Not child of parent! " + Hierarchy.getPathString(cmt));
+        
         parent.remove(pos);
+    }
+    
+    static void removeAllFromClass(AST ast, Class cls)
+    {
+        ArrayList<AST> nodes = Matcher.findAllMatchingFromClass(ast, cls);
+        
+        for (AST node : nodes)
+        {
+            removeNode(node);
+        }
     }
     
 }
