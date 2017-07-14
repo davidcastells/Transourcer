@@ -29,4 +29,21 @@ public class IfStatement extends AST
         return "IfStatement";
     }
     
+    public AST getCondition()
+    {
+        return get(0);
+    }
+    
+    public AST getPositiveBranch()
+    {
+        return get(1);
+    }
+    
+    public AST getNegativeBranch()
+    {
+        if (size() < 3)
+            return null;
+        
+        return get(2);
+    }
 }
