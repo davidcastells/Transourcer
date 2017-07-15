@@ -52,4 +52,14 @@ public class VariableDeclaration extends AST
     {
         return getChildrenFromClass(ArrayDimension.class);
     }
+    
+    public TypeSpecifier getType()
+    {
+        ArrayList<TypeSpecifier> types = getChildrenFromClass(TypeSpecifier.class);
+        
+        if (types.size() != 1)
+            throw new RuntimeException("No types");
+        
+        return types.get(0);
+    }
 }
