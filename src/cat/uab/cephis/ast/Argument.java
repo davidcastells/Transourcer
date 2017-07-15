@@ -25,7 +25,7 @@ public class Argument extends AST
     
     public  String name;
     private final String modifiers;
-    private TypeSpecifier type;
+
     private boolean passedByValue = true;
 
     public Argument(TypeSpecifier paramType, String paramName, String modifiers)
@@ -38,7 +38,6 @@ public class Argument extends AST
 
     public void setType(TypeSpecifier type)
     {
-        this.type = type;
         add(type);
         
         if (type.type.contains("*"))
@@ -49,7 +48,7 @@ public class Argument extends AST
 
     public TypeSpecifier getType()
     {
-        return type;
+        return (TypeSpecifier) get(0);
     }
 
     public String getName()
