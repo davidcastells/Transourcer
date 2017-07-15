@@ -182,4 +182,15 @@ public class CPPToken
     {
         return token == StreamTokenizer.TT_PREPROCESSOR;
     }
+
+    public boolean isUnaryMemoryOperator()
+    {
+        if (token != StreamTokenizer.TT_OPERATOR)
+            return false;
+        
+        if (sval.equals("&")) return true;
+        if (sval.equals("*")) return true;
+        
+        return false;
+    }
 }
