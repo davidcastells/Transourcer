@@ -62,7 +62,17 @@ public class VariableDefinition extends AST
      */
     public AST getInitialValue()
     {
-        return Hierarchy.getLastChild(this);
+        for (AST child : this)
+        {
+            if (child instanceof TypeSpecifier)
+                continue;
+            if (child instanceof ArrayDimension)
+                continue;
+            
+            return child;
+        }
+        
+        return null;
     }
     
     
