@@ -77,6 +77,25 @@ public class Matcher
     
     /**
      * 
+     * @param array
+     * @param rule
+     * @return 
+     */
+    public static ArrayList<AST> findAllMatching(ArrayList<AST> array, MatchingRule rule)
+    {
+        ArrayList<AST> ret = new ArrayList<AST>();
+        
+        for (AST child : array)
+        {
+            if (rule.matches(child))
+                ret.add(child);
+        }
+        
+        return ret;
+    }
+    
+    /**
+     * Finds all descendant ASTs from ast from a given class
      * @param ast
      * @param cls
      * @return 
@@ -92,5 +111,10 @@ public class Matcher
                 return cls.equals(node.getClass());
             }
         });
+    }
+    
+    public static ArrayList<AST> findAllMatchingFromClass(AST ast, Class cls, MatchingRule rule)
+    {
+        return findAllMatching(findAllMatchingFromClass(ast, cls), rule);
     }
 }
