@@ -28,6 +28,17 @@ public class ArithmeticExpression extends AST
     private boolean unary = false;  // binary expressions by default
     private boolean isPost = true;
 
+    public ArithmeticExpression()
+    {    
+    }
+    
+    public ArithmeticExpression(String operator, AST left, AST right)
+    {
+        this.operator = operator;
+        add(left);
+        add(right);
+    }
+
     
     @Override
     public String getProperties()
